@@ -1,6 +1,7 @@
 import { Polyline } from 'react-leaflet';
 import type { BusRoute } from '../../utils/types';
 import { useUIStore } from '../../store/uiStore';
+import { useRouteStore } from '../../store/routeStore';
 import { getRouteFilterType } from '../../utils/routeTypeHelper';
 
 interface RouteLayerProps {
@@ -32,13 +33,11 @@ export function RouteLayer({ route, color = '#3B82F6', visible = true }: RouteLa
   );
 }
 
-interface RouteLayersProps {
-  routes: BusRoute[];
-}
-
-export function RouteLayers({ routes }: RouteLayersProps) {
+export function RouteLayers() {
   const { filterColors } = useUIStore();
+  const routesMap = useRouteStore(state => state.routes) || new Map();
   
+  const routes = Array.from(routesMap.values());
   return (
     <>
       {routes.map((route) => {

@@ -5,21 +5,21 @@ import { useRouteData } from '../../hooks/useRouteData';
 import { StopMarkers } from './StopMarker';
 import { RouteLayers } from './RouteLayer';
 import { useUIStore } from '../../store/uiStore';
-import { globalRouteIndex } from '../../services/spatialIndex';
+import { useRouteStore } from '../../store/routeStore';
 import { groupRoutesByCompany } from '../../utils/companyColors';
 import type { BusStop } from '../../utils/types';
-import { getRoutesByStop } from '../../services/routeDataLoader';
 import { assignRouteColors } from '../../utils/colorGenerator';
 import 'leaflet/dist/leaflet.css';
 
 // 地图点击监听组件
 function MapClickHandler() {
+  const findRoutesNear = useRouteStore(state => state.findRoutesNear);
   const [clickPopup, setClickPopup] = useState<{ latlng: L.LatLng; content: JSX.Element } | null>(null);
   
   useMapEvents({
     click(e) {
-      // 查找点击点附近的路线
-      const nearbyRoutes = globalRouteIndex.findRoutesNear([e.latlng.lat, e.latlng.lng], 0.0008);
+      // 查找点击点附近的路线（使用统一数据层）
+      const nearbyRoutes = findRoutesNear([e.latlng.lat, e.latlng.lng], 0.0008);
       
       if (nearbyRoutes.length > 0) {
         // 使用 startTransition 延迟非紧急更新，避免阻塞渲染
@@ -69,13 +69,23 @@ function MapClickHandler() {
 export default function Map() {
   // 从 store 读取选中的过滤器
   const { selectedFilters, setSelectedStop, setActiveRoutes } = useUIStore();
-  const { routes, stops, loading, loadingProgress, error } = useRouteData(selectedFilters);
+  
+  // 触发数据加载
+  useRouteData(selectedFilters);
+  
+  // 从 RouteStore 读取状态
+  const loading = useRouteStore(state => state.loading);
+  const progress = useRouteStore(state => state.progress);
+  const error = useRouteStore(state => state.error);
+  const routeCount = useRouteStore(state => state.routes.size);
+  const stopCount = useRouteStore(state => state.stops.size);
+  const getRoutesByStop = useRouteStore(state => state.getRoutesByStop);
 
   const handleStopClick = (stop: BusStop) => {
     setSelectedStop(stop.id);
     
     // 获取经过该站的所有路线
-    const routesAtStop = getRoutesByStop(stop.id, routes);
+    const routesAtStop = getRoutesByStop(stop.id);
     console.log('Clicked stop:', stop.name.zh, 'Routes:', routesAtStop.map(r => r.routeNumber));
     
     // 为路线分配颜色
@@ -114,23 +124,23 @@ export default function Map() {
         <MapClickHandler />
         
         {/* 显示路线 */}
-        <RouteLayers routes={routes} />
+        <RouteLayers />
         
         {/* 显示站点 */}
-        <StopMarkers stops={stops} routes={routes} onStopClick={handleStopClick} />
+        <StopMarkers onStopClick={handleStopClick} />
       </LeafletMap>
       
       {/* 显示加载的数据统计 */}
       <div className="absolute top-4 right-4 z-[900]" style={{ backgroundColor: '#ffffff' }}>
         <div className="rounded-lg shadow-lg p-3 text-sm">
           <div className="font-semibold mb-1">已加载数据</div>
-          {loading && loadingProgress.loaded > 0 && (
+          {loading && progress.loaded > 0 && (
             <div className="text-blue-600 mb-1">
-              加载中 {loadingProgress.loaded}/{loadingProgress.total} 条路线
+              加载中 {progress.loaded}/{progress.total} 条路线
             </div>
           )}
-          <div>路线: {routes.length} 条</div>
-          <div>站点: {stops.length} 个</div>
+          <div>路线: {routeCount} 条</div>
+          <div>站点: {stopCount} 个</div>
           {error && (
             <div className="text-red-600 text-xs mt-2">
               ⚠️ {error.message}

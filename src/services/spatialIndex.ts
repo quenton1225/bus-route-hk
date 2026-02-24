@@ -15,21 +15,19 @@ interface RouteSegment {
 /**
  * 空间索引管理器
  * 用于快速查询某个点附近的路线
+ * 注意：只存储路线ID和空间信息，不存储完整路线对象（由 RouteStore 管理）
  */
 export class SpatialRouteIndex {
   private tree: RBush<RouteSegment>;
-  private routeMap: Map<string, BusRoute>;
   
   constructor() {
     this.tree = new RBush<RouteSegment>();
-    this.routeMap = new Map();
   }
   
   /**
    * 添加一条路线到索引
    */
   addRoute(route: BusRoute): void {
-    this.routeMap.set(route.id, route);
     
     const coords = route.path.coordinates;
     if (coords.length < 2) return;
@@ -62,9 +60,9 @@ export class SpatialRouteIndex {
    * 查找某个点附近的所有路线
    * @param latlng [latitude, longitude]
    * @param radiusInDegrees 搜索半径（度），默认 0.001 约 100 米
-   * @returns 附近的路线数组
+   * @returns 附近的路线ID数组
    */
-  findRoutesNear(latlng: [number, number], radiusInDegrees = 0.001): BusRoute[] {
+  findRoutesNear(latlng: [number, number], radiusInDegrees = 0.001): string[] {
     const [lat, lng] = latlng;
     
     // 在 R-tree 中搜索
@@ -75,18 +73,8 @@ export class SpatialRouteIndex {
       maxY: lat + radiusInDegrees
     });
     
-    // 去重并获取完整路线对象
-    const uniqueRouteIds = new Set(results.map(seg => seg.routeId));
-    return Array.from(uniqueRouteIds)
-      .map(id => this.routeMap.get(id))
-      .filter((route): route is BusRoute => route !== undefined);
-  }
-  
-  /**
-   * 获取某个路线的详细信息
-   */
-  getRoute(routeId: string): BusRoute | undefined {
-    return this.routeMap.get(routeId);
+    // 去重并返回路线ID数组
+    return Array.from(new Set(results.map(seg => seg.routeId)));
   }
   
   /**
@@ -94,15 +82,13 @@ export class SpatialRouteIndex {
    */
   clear(): void {
     this.tree.clear();
-    this.routeMap.clear();
   }
   
   /**
    * 获取统计信息
    */
-  getStats(): { routes: number; segments: number } {
+  getStats(): { segments: number } {
     return {
-      routes: this.routeMap.size,
       segments: this.tree.all().length
     };
   }

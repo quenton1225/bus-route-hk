@@ -1,19 +1,19 @@
 import { CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
-import type { BusStop, BusRoute } from '../../utils/types';
+import type { BusStop } from '../../utils/types';
 import L from 'leaflet';
-import { getRoutesByStop } from '../../services/routeDataLoader';
+import { useRouteStore } from '../../store/routeStore';
 import { groupRoutesByCompany } from '../../utils/companyColors';
 
 interface StopMarkerProps {
   stop: BusStop;
-  routes: BusRoute[];
   onClick?: (stop: BusStop) => void;
 }
 
-export function StopMarker({ stop, routes, onClick }: StopMarkerProps) {
-  // 动态计算经过该站的路线
-  const routesAtStop = getRoutesByStop(stop.id, routes);
+export function StopMarker({ stop, onClick }: StopMarkerProps) {
+  // 使用统一数据层查询经过该站的路线
+  const getRoutesByStop = useRouteStore(state => state.getRoutesByStop);
+  const routesAtStop = getRoutesByStop(stop.id);
   
   return (
     <CircleMarker
@@ -61,27 +61,28 @@ export function StopMarker({ stop, routes, onClick }: StopMarkerProps) {
 }
 
 interface StopMarkersProps {
-  stops: BusStop[];
-  routes: BusRoute[];
   onStopClick?: (stop: BusStop) => void;
   autoFit?: boolean;
 }
 
-export function StopMarkers({ stops, routes, onStopClick, autoFit = true }: StopMarkersProps) {
+export function StopMarkers({ onStopClick, autoFit = true }: StopMarkersProps) {
   const map = useMap();
+  const stopsMap = useRouteStore(state => state.stops) || new Map();
 
   // 自动调整地图视野以包含所有站点
   useEffect(() => {
-    if (autoFit && stops.length > 0) {
+    if (autoFit && stopsMap.size > 0) {
+      const stops = Array.from(stopsMap.values());
       const bounds = L.latLngBounds(stops.map(stop => stop.coordinates));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [stops, map, autoFit]);
+  }, [stopsMap.size, map, autoFit]);
 
+  const stops = Array.from(stopsMap.values());
   return (
     <>
       {stops.map((stop) => (
-        <StopMarker key={stop.id} stop={stop} routes={routes} onClick={onStopClick} />
+        <StopMarker key={stop.id} stop={stop} onClick={onStopClick} />
       ))}
     </>
   );

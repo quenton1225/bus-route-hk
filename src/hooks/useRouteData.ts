@@ -1,54 +1,54 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { loadRoutesData } from '../services/routeDataLoader';
 import { globalRouteIndex } from '../services/spatialIndex';
-import type { BusRoute, BusStop } from '../utils/types';
+import { useRouteStore } from '../store/routeStore';
+import type { BusRoute } from '../utils/types';
 
 export function useRouteData(routeNumbers: string[]) {
-  const [routes, setRoutes] = useState<BusRoute[]>([]);
-  const [stops, setStops] = useState<BusStop[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
-  const [error, setError] = useState<Error | null>(null);
+  const { addRoutes, setStops, setProgress, setLoading, setError, clear } = useRouteStore();
 
   useEffect(() => {
-    let mounted = true;
-
     const loadData = async () => {
       // 如果没有选中任何过滤器，不加载数据
       if (routeNumbers.length === 0) {
-        setRoutes([]);
-        setStops([]);
-        setLoading(false);
-        setLoadingProgress({ loaded: 0, total: 0 });
-        globalRouteIndex.clear(); // 清空索引
+        clear();
         return;
       }
 
       try {
         setLoading(true);
         setError(null);
-        setRoutes([]);
-        setStops([]);
-        setLoadingProgress({ loaded: 0, total: 0 });
-        globalRouteIndex.clear(); // 清空旧索引
+        setProgress(0, 0);
+        clear(); // 清空旧数据和索引
+        
+        // 临时数组用于批量更新
+        const tempRoutes: BusRoute[] = [];
+        const BATCH_SIZE = 50; // 每50条路线批量更新一次
         
         const data = await loadRoutesData(
           routeNumbers,
-          // 每加载完一条路线就追加
+          // 每加载完一条路线就累积
           (route) => {
-            if (mounted) {
-              setRoutes(prev => [...prev, route]);
-              // 同时添加到空间索引
-              globalRouteIndex.addRoute(route);
+            tempRoutes.push(route);
+            // 同时添加到空间索引
+            globalRouteIndex.addRoute(route);
+            
+            // 达到批量大小时更新
+            if (tempRoutes.length >= BATCH_SIZE) {
+              addRoutes([...tempRoutes]);
+              tempRoutes.length = 0; // 清空临时数组
             }
           },
           // 进度更新
           (loaded, total) => {
-            if (mounted) {
-              setLoadingProgress({ loaded, total });
-            }
+            setProgress(loaded, total);
           }
         );
+        
+        // 处理剩余未达到批量大小的路线
+        if (tempRoutes.length > 0) {
+          addRoutes(tempRoutes);
+        }
         
         // 使用最终的 stops 数据（已正确填充 routeIds）
         // 不检查 mounted - 确保最终状态更新始终执行
@@ -66,11 +66,5 @@ export function useRouteData(routeNumbers: string[]) {
     };
 
     loadData();
-
-    return () => {
-      mounted = false;
-    };
   }, [routeNumbers.join(',')]);
-
-  return { routes, stops, loading, loadingProgress, error };
 }
