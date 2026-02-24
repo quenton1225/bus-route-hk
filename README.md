@@ -2,6 +2,10 @@
 
 一个基于 React 的交互式香港巴士路线可视化应用，展示九巴、城巴、新巴、龙运和专线小巴等巴士路线。
 
+## 🌐 在线演示
+
+**👉 [立即访问](https://quenton1225.github.io/bus-route-hk/)**
+
 ## ✨ 主要功能
 
 - 🗺️ **交互式地图**：基于 Leaflet 的流畅地图体验
@@ -65,6 +69,14 @@ npm run deploy
 
 详细数据源说明见 [DATA_SOURCE.md](DATA_SOURCE.md)
 
-## 📝 许可
+## � 反馈与贡献
+
+这是我的第一个可运行的开源项目！如果你有任何建议、发现了 bug，或想要添加新功能，非常欢迎：
+
+- 🐛 [提交 Issue](https://github.com/quenton1225/bus-route-hk/issues) 报告问题或建议
+- 🔧 提交 Pull Request 参与开发
+- ⭐ 如果觉得有用，欢迎 Star 支持！
+
+## �📝 许可
 
 MIT License
