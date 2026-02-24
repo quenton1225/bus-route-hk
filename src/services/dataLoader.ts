@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { BusRoute, BusStop, StopRouteRelation } from '../utils/types';
+import type { BusRoute, BusStop } from '../utils/types';
 
 const HKBUS_DATA_URL = 'https://hkbus.github.io/hk-bus-crawling/routeFareList.min.json';
 

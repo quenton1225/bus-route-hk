@@ -196,7 +196,7 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
     set({
       routes: new Map(),
       stops: new Map(),
-      loading: false,
+      // 不重置 loading 状态，由调用方管理
       progress: { loaded: 0, total: 0 },
       error: null,
     });

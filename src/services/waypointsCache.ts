@@ -11,7 +11,7 @@ const waypointsStore = localforage.createInstance({
 const isDev = import.meta.env.DEV;
 const WAYPOINTS_BASE_URL = isDev
   ? '/api/waypoints'
-  : 'https://hkbus.github.io/route-waypoints';
+  : 'https://raw.githubusercontent.com/hkbus/route-waypoints/gh-pages';
 
 /**
  * 获取 waypoints 数据（带缓存）

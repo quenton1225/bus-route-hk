@@ -50,8 +50,8 @@ export const useUIStore = create<UIStore>((set) => ({
   },
   isPanelOpen: false,
   
-  // 公司筛选初始状态 - 默认全部公司开启
-  selectedCompanies: ['KMB', 'CTB', 'NLB', 'OTHER'],
+  // 公司筛选初始状态 - 默认九巴、城巴、新大屿山巴士，不包括其它
+  selectedCompanies: ['KMB', 'CTB', 'NLB'],
 
   // Actions
   setActiveRoutes: (routes) => set({ activeRoutes: routes }),

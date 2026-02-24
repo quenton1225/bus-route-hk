@@ -1,5 +1,6 @@
 import { MapContainer as LeafletMap, TileLayer, ZoomControl, useMapEvents, Popup } from 'react-leaflet';
 import { useState, startTransition } from 'react';
+import type React from 'react';
 import { HK_CENTER, HK_DEFAULT_ZOOM, OSM_TILE_URL, OSM_ATTRIBUTION, MAP_CONFIG } from '../../utils/constants';
 import { useRouteData } from '../../hooks/useRouteData';
 import { StopMarkers } from './StopMarker';
@@ -14,7 +15,7 @@ import 'leaflet/dist/leaflet.css';
 // 地图点击监听组件
 function MapClickHandler() {
   const findRoutesNear = useRouteStore(state => state.findRoutesNear);
-  const [clickPopup, setClickPopup] = useState<{ latlng: L.LatLng; content: JSX.Element } | null>(null);
+  const [clickPopup, setClickPopup] = useState<{ latlng: L.LatLng; content: React.ReactElement } | null>(null);
   
   useMapEvents({
     click(e) {
@@ -60,7 +61,12 @@ function MapClickHandler() {
   });
   
   return clickPopup ? (
-    <Popup position={clickPopup.latlng} onClose={() => setClickPopup(null)}>
+    <Popup 
+      position={clickPopup.latlng} 
+      eventHandlers={{
+        remove: () => setClickPopup(null)
+      }}
+    >
       {clickPopup.content}
     </Popup>
   ) : null;
@@ -130,15 +136,26 @@ export default function Map() {
         <StopMarkers onStopClick={handleStopClick} />
       </LeafletMap>
       
+      {/* 加载状态提示 */}
+      {loading && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1100]">
+          <div className="rounded-lg shadow-xl px-6 py-3 flex items-center space-x-3" style={{ backgroundColor: '#ffffff', border: '2px solid #3B82F6' }}>
+            {/* 加载动画 */}
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <div>
+              <div className="font-semibold text-gray-900">加载中...</div>
+              <div className="text-sm text-blue-600">
+                {progress.total > 0 ? `${Math.round((progress.loaded / progress.total) * 100)}%` : '0%'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* 显示加载的数据统计 */}
       <div className="absolute top-4 right-4 z-[900]" style={{ backgroundColor: '#ffffff' }}>
         <div className="rounded-lg shadow-lg p-3 text-sm">
           <div className="font-semibold mb-1">已加载数据</div>
-          {loading && progress.loaded > 0 && (
-            <div className="text-blue-600 mb-1">
-              加载中 {progress.loaded}/{progress.total} 条路线
-            </div>
-          )}
           <div>路线: {routeCount} 条</div>
           <div>站点: {stopCount} 个</div>
           {error && (
