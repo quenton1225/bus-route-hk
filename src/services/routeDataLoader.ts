@@ -312,6 +312,14 @@ export async function loadRoutesData(
     });
   });
   
+  // 清空所有路线的 stops 数组以减少内存占用
+  // 因为运行时通过 stop.routeIds 查询，不再需要 route.stops
+  routes.forEach(route => {
+    route.stops = [];
+  });
+  
+  console.log(`✓ Data loaded and optimized: ${routes.length} routes, ${stops.length} stops`);
+  
   return {
     routes,
     stops,

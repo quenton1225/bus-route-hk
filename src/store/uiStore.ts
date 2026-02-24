@@ -5,11 +5,11 @@ import { HK_CENTER, HK_DEFAULT_ZOOM } from '../utils/constants';
 interface UIStore extends UIState {
   // 过滤器状态
   selectedFilters: string[];
-  filterColors: Map<string, string>;
+  filterColors: Record<string, string>;
   isPanelOpen: boolean;
   
   // 公司筛选
-  selectedCompanies: Set<string>;
+  selectedCompanies: string[];
   toggleCompany: (company: string) => void;
   
   // 原有的方法
@@ -43,15 +43,15 @@ export const useUIStore = create<UIStore>((set) => ({
   
   // 过滤器初始状态 - 默认不选中任何过滤器
   selectedFilters: [],
-  filterColors: new Map([
-    ['A*', '#007AFF'],   // 苹果蓝
-    ['NA*', '#34C759'],  // 苹果绿
-    ['E*', '#FF9500'],   // 苹果橙
-  ]),
+  filterColors: {
+    'A*': '#007AFF',   // 苹果蓝
+    'NA*': '#34C759',  // 苹果绿
+    'E*': '#FF9500',   // 苹果橙
+  },
   isPanelOpen: false,
   
   // 公司筛选初始状态 - 默认全部公司开启
-  selectedCompanies: new Set(['KMB', 'CTB', 'NLB', 'OTHER']),
+  selectedCompanies: ['KMB', 'CTB', 'NLB', 'OTHER'],
 
   // Actions
   setActiveRoutes: (routes) => set({ activeRoutes: routes }),
@@ -93,22 +93,19 @@ export const useUIStore = create<UIStore>((set) => ({
       : [...state.selectedFilters, filter],
   })),
   
-  setFilterColor: (filter, color) => set((state) => {
-    const newColors = new Map(state.filterColors);
-    newColors.set(filter, color);
-    return { filterColors: newColors };
-  }),
+  setFilterColor: (filter, color) => set((state) => ({
+    filterColors: { ...state.filterColors, [filter]: color }
+  })),
   
   togglePanel: () => set((state) => ({ isPanelOpen: !state.isPanelOpen })),
   
   // 公司筛选方法
   toggleCompany: (company) => set((state) => {
-    const newCompanies = new Set(state.selectedCompanies);
-    if (newCompanies.has(company)) {
-      newCompanies.delete(company);
+    const companies = state.selectedCompanies;
+    if (companies.includes(company)) {
+      return { selectedCompanies: companies.filter(c => c !== company) };
     } else {
-      newCompanies.add(company);
+      return { selectedCompanies: [...companies, company] };
     }
-    return { selectedCompanies: newCompanies };
   }),
 }));

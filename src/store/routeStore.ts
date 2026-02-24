@@ -23,8 +23,8 @@ interface RouteStore {
   findRoutesNear: (latlng: [number, number], radius?: number) => BusRoute[];
   
   // 公司筛选查询
-  getFilteredRoutes: (companies: Set<string>) => BusRoute[];
-  getFilteredStops: (companies: Set<string>) => BusStop[];
+  getFilteredRoutes: (companies: string[]) => BusRoute[];
+  getFilteredStops: (companies: string[]) => BusStop[];
   
   // 修改方法
   addRoutes: (routes: BusRoute[]) => void;
@@ -33,6 +33,25 @@ interface RouteStore {
   setLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
   clear: () => void;
+}
+
+// 缓存机制 - 避免重复计算（仅缓存路线，站点总是重新计算）
+let cachedCompanies: string[] = [];
+let cachedRoutes: BusRoute[] = [];
+
+// 比较两个字符串数组是否相等（顺序敏感）
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+// 清空缓存
+function clearCache() {
+  cachedCompanies = [];
+  cachedRoutes = [];
 }
 
 export const useRouteStore = create<RouteStore>((set, get) => ({
@@ -79,42 +98,61 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
     return get().getRoutes(routeIds);
   },
   
-  // 公司筛选查询
-  getFilteredRoutes: (companies: Set<string>) => {
+  // 公司筛选查询 - 带缓存
+  getFilteredRoutes: (companies: string[]) => {
+    // 检查缓存：如果筛选条件相同，直接返回缓存的数组引用
+    if (arraysEqual(companies, cachedCompanies)) {
+      return cachedRoutes;
+    }
+    
     const allRoutes = Array.from(get().routes.values());
     
     // 如果全部公司都选中，直接返回所有路线
-    if (companies.size === 4) return allRoutes;
+    if (companies.length === 4) {
+      cachedCompanies = [...companies];
+      cachedRoutes = allRoutes;
+      return allRoutes;
+    }
     
-    return allRoutes.filter(route => {
-      const company = route.company;
+    const filteredRoutes = allRoutes.filter(route => {
+      const company = route.company as string;
       
       // 映射公司到筛选类别
-      if (companies.has('KMB') && (company === 'KMB' || company === 'LWB')) {
+      if (companies.includes('KMB') && (company === 'KMB' || company === 'LWB')) {
         return true;
       }
-      if (companies.has('CTB') && (company === 'CTB' || company === 'NWFB')) {
+      if (companies.includes('CTB') && (company === 'CTB' || company === 'NWFB')) {
         return true;
       }
-      if (companies.has('NLB') && company === 'NLB') {
+      if (companies.includes('NLB') && company === 'NLB') {
         return true;
       }
-      if (companies.has('OTHER') && !['KMB', 'LWB', 'CTB', 'NWFB', 'NLB'].includes(company)) {
+      if (companies.includes('OTHER') && !['KMB', 'LWB', 'CTB', 'NWFB', 'NLB'].includes(company)) {
         return true;
       }
       
       return false;
     });
+    
+    // 缓存结果
+    cachedCompanies = [...companies];
+    cachedRoutes = filteredRoutes;
+    
+    return filteredRoutes;
   },
   
-  getFilteredStops: (companies: Set<string>) => {
+  getFilteredStops: (companies: string[]) => {
+    // 复用 getFilteredRoutes 的缓存
     const filteredRoutes = get().getFilteredRoutes(companies);
+    
     const filteredRouteIds = new Set(filteredRoutes.map(r => r.id));
     
     const allStops = Array.from(get().stops.values());
-    return allStops.filter(stop => 
+    const filteredStops = allStops.filter(stop => 
       stop.routeIds.some(routeId => filteredRouteIds.has(routeId))
     );
+    
+    return filteredStops;
   },
   
   // 修改方法实现
@@ -126,6 +164,8 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
       });
       return { routes: newRoutes };
     });
+    // 数据变化时清空缓存
+    clearCache();
   },
   
   setStops: (stops: BusStop[]) => {
@@ -136,6 +176,8 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
       });
       return { stops: stopsMap };
     });
+    // 数据变化时清空缓存
+    clearCache();
   },
   
   setProgress: (loaded: number, total: number) => {
@@ -159,5 +201,7 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
       error: null,
     });
     globalRouteIndex.clear();
+    // 清空缓存
+    clearCache();
   },
 }));

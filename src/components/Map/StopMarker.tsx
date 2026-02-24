@@ -20,6 +20,7 @@ export function StopMarker({ stop, onClick }: StopMarkerProps) {
     <CircleMarker
       center={stop.coordinates}
       radius={4}
+      pane="markerPane"
       pathOptions={{
         fillColor: '#ffffff',
         fillOpacity: 0.9,
@@ -79,7 +80,7 @@ export function StopMarkers({ onStopClick, autoFit = true }: StopMarkersProps) {
       const bounds = L.latLngBounds(stops.map(stop => stop.coordinates));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [stops.length, map, autoFit]);
+  }, [stops, map, autoFit]);
 
   return (
     <>

@@ -29,8 +29,8 @@ function MapClickHandler() {
           setClickPopup({
             latlng: e.latlng,
             content: (
-            <div className="text-sm min-w-[180px]">
-              <div className="font-bold mb-2">此处经过 {nearbyRoutes.length} 条路线</div>
+            <div className="text-sm min-w-[180px] max-h-[300px] overflow-y-auto">
+              <div className="font-bold mb-2 sticky top-0 bg-white z-10 pb-1">此处经过 {nearbyRoutes.length} 条路线</div>
               {groups.map(group => (
                 <div key={group.name} className="mb-2 last:mb-0">
                   <div className="text-xs text-gray-600 mb-1">{group.name}</div>

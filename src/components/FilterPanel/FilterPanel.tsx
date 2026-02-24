@@ -73,7 +73,7 @@ export function FilterPanel() {
             <div className="space-y-2">
               {FILTER_OPTIONS.map((option) => {
                 const isSelected = selectedFilters.includes(option.id);
-                const currentColor = filterColors.get(option.id) || option.defaultColor;
+                const currentColor = filterColors[option.id] || option.defaultColor;
                 
                 return (
                   <div key={option.id} className="flex items-center justify-between group">
@@ -125,7 +125,7 @@ export function FilterPanel() {
                   <label key={company.id} className="flex items-center cursor-pointer group">
                     <input
                       type="checkbox"
-                      checked={selectedCompanies.has(company.id)}
+                      checked={selectedCompanies.includes(company.id)}
                       onChange={() => toggleCompany(company.id)}
                       className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                     />

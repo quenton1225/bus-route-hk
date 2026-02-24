@@ -24,6 +24,7 @@ export function RouteLayer({ route, color = '#3B82F6', visible = true }: RouteLa
       color={color}
       weight={4}
       opacity={0.7}
+      pane="overlayPane"
       pathOptions={{
         className: 'route-line',
       }}
@@ -44,7 +45,7 @@ export function RouteLayers() {
       {routes.map((route) => {
         // 根据路线号判断类型，然后获取对应颜色
         const filterType = getRouteFilterType(route.routeNumber);
-        const color = filterType ? filterColors.get(filterType) : undefined;
+        const color = filterType ? filterColors[filterType] : undefined;
         
         return (
           <RouteLayer
