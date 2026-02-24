@@ -8,6 +8,10 @@ interface UIStore extends UIState {
   filterColors: Map<string, string>;
   isPanelOpen: boolean;
   
+  // 公司筛选
+  selectedCompanies: Set<string>;
+  toggleCompany: (company: string) => void;
+  
   // 原有的方法
   setActiveRoutes: (routes: RouteDisplay[]) => void;
   addActiveRoute: (route: RouteDisplay) => void;
@@ -45,6 +49,9 @@ export const useUIStore = create<UIStore>((set) => ({
     ['E*', '#FF9500'],   // 苹果橙
   ]),
   isPanelOpen: false,
+  
+  // 公司筛选初始状态 - 默认全部公司开启
+  selectedCompanies: new Set(['KMB', 'CTB', 'NLB', 'OTHER']),
 
   // Actions
   setActiveRoutes: (routes) => set({ activeRoutes: routes }),
@@ -93,4 +100,15 @@ export const useUIStore = create<UIStore>((set) => ({
   }),
   
   togglePanel: () => set((state) => ({ isPanelOpen: !state.isPanelOpen })),
+  
+  // 公司筛选方法
+  toggleCompany: (company) => set((state) => {
+    const newCompanies = new Set(state.selectedCompanies);
+    if (newCompanies.has(company)) {
+      newCompanies.delete(company);
+    } else {
+      newCompanies.add(company);
+    }
+    return { selectedCompanies: newCompanies };
+  }),
 }));

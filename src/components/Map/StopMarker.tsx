@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import type { BusStop } from '../../utils/types';
 import L from 'leaflet';
 import { useRouteStore } from '../../store/routeStore';
+import { useUIStore } from '../../store/uiStore';
 import { groupRoutesByCompany } from '../../utils/companyColors';
 
 interface StopMarkerProps {
@@ -67,18 +68,19 @@ interface StopMarkersProps {
 
 export function StopMarkers({ onStopClick, autoFit = true }: StopMarkersProps) {
   const map = useMap();
-  const stopsMap = useRouteStore(state => state.stops) || new Map();
+  const selectedCompanies = useUIStore(state => state.selectedCompanies);
+  const getFilteredStops = useRouteStore(state => state.getFilteredStops);
+  
+  const stops = getFilteredStops(selectedCompanies);
 
   // 自动调整地图视野以包含所有站点
   useEffect(() => {
-    if (autoFit && stopsMap.size > 0) {
-      const stops = Array.from(stopsMap.values());
+    if (autoFit && stops.length > 0) {
       const bounds = L.latLngBounds(stops.map(stop => stop.coordinates));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [stopsMap.size, map, autoFit]);
+  }, [stops.length, map, autoFit]);
 
-  const stops = Array.from(stopsMap.values());
   return (
     <>
       {stops.map((stop) => (

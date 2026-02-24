@@ -3,8 +3,25 @@ import { FILTER_OPTIONS } from '../../utils/filterConfig';
 import { useState } from 'react';
 
 export function FilterPanel() {
-  const { isPanelOpen, togglePanel, selectedFilters, toggleFilter, filterColors, setFilterColor } = useUIStore();
+  const { 
+    isPanelOpen, 
+    togglePanel, 
+    selectedFilters, 
+    toggleFilter, 
+    filterColors, 
+    setFilterColor,
+    selectedCompanies,
+    toggleCompany
+  } = useUIStore();
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  
+  // 公司配置
+  const companies = [
+    { id: 'KMB', label: '九巴/龙运', color: '#E31C23' },
+    { id: 'CTB', label: '城巴/新巴', color: '#FFD100' },
+    { id: 'NLB', label: '大屿山巴士', color: '#00A550' },
+    { id: 'OTHER', label: '其它', color: '#999999' },
+  ];
 
   return (
     <>
@@ -98,6 +115,28 @@ export function FilterPanel() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* 公司筛选 */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">巴士公司</h3>
+              <div className="space-y-2">
+                {companies.map(company => (
+                  <label key={company.id} className="flex items-center cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={selectedCompanies.has(company.id)}
+                      onChange={() => toggleCompany(company.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                    />
+                    <span
+                      className="w-3 h-3 rounded-full ml-3 mr-2"
+                      style={{ backgroundColor: company.color }}
+                    />
+                    <span className="text-sm text-gray-900">{company.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* 预留搜索区域 */}

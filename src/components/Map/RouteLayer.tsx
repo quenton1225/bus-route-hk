@@ -35,9 +35,10 @@ export function RouteLayer({ route, color = '#3B82F6', visible = true }: RouteLa
 
 export function RouteLayers() {
   const { filterColors } = useUIStore();
-  const routesMap = useRouteStore(state => state.routes) || new Map();
+  const selectedCompanies = useUIStore(state => state.selectedCompanies);
+  const getFilteredRoutes = useRouteStore(state => state.getFilteredRoutes);
   
-  const routes = Array.from(routesMap.values());
+  const routes = getFilteredRoutes(selectedCompanies);
   return (
     <>
       {routes.map((route) => {
