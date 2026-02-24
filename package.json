@@ -17,6 +17,8 @@
     "axios": "^1.13.5",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
+    "localforage": "^1.10.0",
+    "rbush": "^4.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0",

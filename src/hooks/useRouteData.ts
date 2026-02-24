@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadRoutesData } from '../services/routeDataLoader';
+import { globalRouteIndex } from '../services/spatialIndex';
 import type { BusRoute, BusStop } from '../utils/types';
 
 export function useRouteData(routeNumbers: string[]) {
@@ -19,6 +20,7 @@ export function useRouteData(routeNumbers: string[]) {
         setStops([]);
         setLoading(false);
         setLoadingProgress({ loaded: 0, total: 0 });
+        globalRouteIndex.clear(); // 清空索引
         return;
       }
 
@@ -28,6 +30,7 @@ export function useRouteData(routeNumbers: string[]) {
         setRoutes([]);
         setStops([]);
         setLoadingProgress({ loaded: 0, total: 0 });
+        globalRouteIndex.clear(); // 清空旧索引
         
         const data = await loadRoutesData(
           routeNumbers,
@@ -35,6 +38,8 @@ export function useRouteData(routeNumbers: string[]) {
           (route) => {
             if (mounted) {
               setRoutes(prev => [...prev, route]);
+              // 同时添加到空间索引
+              globalRouteIndex.addRoute(route);
             }
           },
           // 进度更新
@@ -46,6 +51,7 @@ export function useRouteData(routeNumbers: string[]) {
         );
         
         // 使用最终的 stops 数据（已正确填充 routeIds）
+        // 不检查 mounted - 确保最终状态更新始终执行
         setStops(data.stops);
         setLoading(false);
         console.log('All data loaded:', {

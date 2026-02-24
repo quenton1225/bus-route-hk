@@ -1,13 +1,70 @@
-import { MapContainer as LeafletMap, TileLayer, ZoomControl } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, ZoomControl, useMapEvents, Popup } from 'react-leaflet';
+import { useState, startTransition } from 'react';
 import { HK_CENTER, HK_DEFAULT_ZOOM, OSM_TILE_URL, OSM_ATTRIBUTION, MAP_CONFIG } from '../../utils/constants';
 import { useRouteData } from '../../hooks/useRouteData';
 import { StopMarkers } from './StopMarker';
 import { RouteLayers } from './RouteLayer';
 import { useUIStore } from '../../store/uiStore';
+import { globalRouteIndex } from '../../services/spatialIndex';
+import { groupRoutesByCompany } from '../../utils/companyColors';
 import type { BusStop } from '../../utils/types';
 import { getRoutesByStop } from '../../services/routeDataLoader';
 import { assignRouteColors } from '../../utils/colorGenerator';
 import 'leaflet/dist/leaflet.css';
+
+// 地图点击监听组件
+function MapClickHandler() {
+  const [clickPopup, setClickPopup] = useState<{ latlng: L.LatLng; content: JSX.Element } | null>(null);
+  
+  useMapEvents({
+    click(e) {
+      // 查找点击点附近的路线
+      const nearbyRoutes = globalRouteIndex.findRoutesNear([e.latlng.lat, e.latlng.lng], 0.0008);
+      
+      if (nearbyRoutes.length > 0) {
+        // 使用 startTransition 延迟非紧急更新，避免阻塞渲染
+        startTransition(() => {
+          const groups = groupRoutesByCompany(nearbyRoutes);
+          
+          setClickPopup({
+            latlng: e.latlng,
+            content: (
+            <div className="text-sm min-w-[180px]">
+              <div className="font-bold mb-2">此处经过 {nearbyRoutes.length} 条路线</div>
+              {groups.map(group => (
+                <div key={group.name} className="mb-2 last:mb-0">
+                  <div className="text-xs text-gray-600 mb-1">{group.name}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.displays.map((display, idx) => (
+                      <div key={`${display.routeNumber}-${idx}`} className="flex flex-col items-center">
+                        <span
+                          className="inline-block px-2 py-0.5 rounded-full text-white text-xs font-medium whitespace-nowrap"
+                          style={{ backgroundColor: group.color }}
+                        >
+                          {display.routeNumber}
+                        </span>
+                        <span className="text-[10px] text-gray-500 text-center mt-0.5" title={display.displayText}>
+                          {display.displayText}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+          });
+        });
+      }
+    }
+  });
+  
+  return clickPopup ? (
+    <Popup position={clickPopup.latlng} onClose={() => setClickPopup(null)}>
+      {clickPopup.content}
+    </Popup>
+  ) : null;
+}
 
 export default function Map() {
   // 从 store 读取选中的过滤器
@@ -52,6 +109,9 @@ export default function Map() {
         
         {/* 缩放控件 - 右下角 */}
         <ZoomControl position="bottomright" />
+        
+        {/* 地图点击监听 */}
+        <MapClickHandler />
         
         {/* 显示路线 */}
         <RouteLayers routes={routes} />

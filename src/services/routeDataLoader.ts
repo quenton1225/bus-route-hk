@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { BusRoute, BusStop } from '../utils/types';
 import { getRouteFilterType } from '../utils/routeTypeHelper';
+import { getCachedWaypoints } from './waypointsCache';
 
 // 开发环境使用代理，生产环境使用直接URL
 const isDev = import.meta.env.DEV;
@@ -13,7 +14,7 @@ const WAYPOINTS_BASE_URL = isDev
   : 'https://hkbus.github.io/route-waypoints';
 
 let cachedData: any = null;
-let waypointsCache = new Map<string, GeoJSON.FeatureCollection>();
+// waypointsCache 已移至 IndexedDB (waypointsCache.ts)
 
 /**
  * 加载并缓存 HKBus 数据
@@ -37,26 +38,10 @@ async function loadHKBusData() {
 
 /**
  * 获取路线的 waypoints 数据
- * routeData 包含 gtfsId 字段，这是 waypoints API 需要的 ID
- * waypoints API 格式: https://hkbus.github.io/route-waypoints/{gtfsId}-{O|I}.json
+ * 现在使用 IndexedDB 缓存，显著提升二次加载速度
  */
 async function fetchWaypoints(gtfsId: number, bound: 'O' | 'I'): Promise<GeoJSON.FeatureCollection | null> {
-  const cacheKey = `${gtfsId}-${bound}`;
-  
-  if (waypointsCache.has(cacheKey)) {
-    return waypointsCache.get(cacheKey)!;
-  }
-  
-  try {
-    const url = `${WAYPOINTS_BASE_URL}/${gtfsId}-${bound}.json`;
-    const response = await axios.get(url);
-    const data = response.data;
-    waypointsCache.set(cacheKey, data);
-    return data;
-  } catch (error) {
-    console.warn(`Failed to fetch waypoints for ${gtfsId}-${bound}:`, error);
-    return null;
-  }
+  return getCachedWaypoints(gtfsId, bound);
 }
 
 /**
