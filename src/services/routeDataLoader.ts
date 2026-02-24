@@ -55,24 +55,49 @@ async function fetchWaypoints(gtfsId: number, bound: 'O' | 'I'): Promise<GeoJSON
  */
 function filterRoutesByNumber(routeList: any, routeNumbers: string[]) {
   const filtered: any = {};
+  let matchCount = 0;
+  let sampleMatches: any[] = [];
+  
+  console.log(`[Filter Debug] 筛选条件:`, routeNumbers);
   
   Object.entries(routeList).forEach(([routeId, route]: [string, any]) => {
     const routeName = route.route;
+    const coList = route.co || [];
+    const firstCo = coList[0]?.toUpperCase() || '';
     const shouldInclude = routeNumbers.some(pattern => {
-      if (pattern.endsWith('*')) {
-        // 使用 routeTypeHelper 的匹配逻辑
-        const filterType = getRouteFilterType(routeName);
-        return filterType === pattern;
-      } else {
-        // 精确匹配
-        return routeName === pattern;
+      // 使用 routeTypeHelper 统一判断路线类型
+      const filterType = getRouteFilterType(routeName, firstCo);
+      
+      // 调试：记录前10条匹配
+      if (filterType === pattern && sampleMatches.length < 10) {
+        sampleMatches.push({ routeName, firstCo, filterType });
       }
+      
+      return filterType === pattern;
     });
     
     if (shouldInclude) {
       filtered[routeId] = route;
+      matchCount++;
     }
   });
+  
+  console.log(`[Filter Debug] 匹配到 ${matchCount} 条路线`);
+  if (sampleMatches.length > 0) {
+    console.log(`[Filter Debug] 前几条匹配示例:`, sampleMatches);
+  } else {
+    console.log(`[Filter Debug] ⚠️ 没有匹配到任何路线！`);
+    // 随机采样几条路线看看filterType是什么
+    const samples = Object.entries(routeList).slice(0, 20);
+    console.log(`[Filter Debug] 随机采样20条路线的filterType:`);
+    samples.forEach(([routeId, route]: [string, any]) => {
+      const routeName = route.route;
+      const coList = route.co || [];
+      const firstCo = coList[0]?.toUpperCase() || '';
+      const filterType = getRouteFilterType(routeName, firstCo);
+      console.log(`  ${routeName} (${firstCo}): ${filterType || 'undefined'}`);
+    });
+  }
   
   return filtered;
 }
@@ -226,8 +251,11 @@ export async function loadRoutesData(
       // MultiLineString: 合并所有部分的坐标
       const multiLineCoords = (geometry as GeoJSON.MultiLineString).coordinates;
       const allCoords: [number, number][] = [];
+      // 使用循环而不是扩展运算符，避免栈溢出
       multiLineCoords.forEach(lineCoords => {
-        allCoords.push(...lineCoords);
+        for (let i = 0; i < lineCoords.length; i++) {
+          allCoords.push(lineCoords[i]);
+        }
       });
       path = {
         type: 'LineString',

@@ -43,8 +43,8 @@ export function RouteLayers() {
   return (
     <>
       {routes.map((route) => {
-        // 根据路线号判断类型，然后获取对应颜色
-        const filterType = getRouteFilterType(route.routeNumber);
+        // 根据路线号和公司判断类型，然后获取对应颜色
+        const filterType = getRouteFilterType(route.routeNumber, route.company);
         const color = filterType ? filterColors[filterType] : undefined;
         
         return (

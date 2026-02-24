@@ -19,7 +19,7 @@ function MapClickHandler() {
   useMapEvents({
     click(e) {
       // 查找点击点附近的路线（使用统一数据层）
-      const nearbyRoutes = findRoutesNear([e.latlng.lat, e.latlng.lng], 0.0008);
+      const nearbyRoutes = findRoutesNear([e.latlng.lat, e.latlng.lng], 0.0003);
       
       if (nearbyRoutes.length > 0) {
         // 使用 startTransition 延迟非紧急更新，避免阻塞渲染
